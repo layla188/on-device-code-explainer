@@ -1,20 +1,20 @@
 # On-Device Code Explainer
 
-A small AI application that explains Python code using a locally running open-source language model.
+A lightweight local LLM application for explaining Python code.
 
-This project was built as part of **Week 4 — Local LLMs & Open-Source Tooling** of the Helwan Career Center AI Engineering Roadmap.
+This project was built as part of **Week 4 — Local LLMs & Open-Source Tooling** in the Helwan Career Center AI Engineering Roadmap.
 
-The main purpose of this project is to explore and demonstrate **local LLM inference** using Ollama and an OpenAI-compatible API.
+The main purpose of this project is to experiment with **running an open-source LLM locally on a laptop** using Ollama and connecting to it from Python through an OpenAI-compatible API.
 
-> **Note:** The project focuses primarily on understanding and demonstrating the local-inference workflow. The selected small model is not intended to provide production-level code explanation quality.
+> **Project focus:** This project is primarily a local-inference experiment. The goal is to understand how a local LLM can be integrated into an application, rather than to achieve production-level code explanation quality.
 
 ---
 
 ## Project Idea
 
-The application accepts a piece of Python code and asks an LLM to explain it in a beginner-friendly way.
+The application takes Python code as input and asks a language model to explain what the code does in a beginner-friendly way.
 
-Example:
+For example:
 
 ```python
 def factorial(n):
@@ -23,38 +23,48 @@ def factorial(n):
     return n * factorial(n - 1)
 ```
 
-The model then generates a natural-language explanation of the code.
+The model generates a natural-language explanation of the code.
+
+---
+
+## Main Features
+
+* Run a coding LLM locally with **Ollama**
+* Explain Python code through a simple application
+* Use the **OpenAI Python client** with an OpenAI-compatible local endpoint
+* Switch between local and hosted inference using one configuration flag
+* Run the application through a **Gradio interface**
+* Measure local generation speed
+* Document the limitations of the selected small model
 
 ---
 
 ## Architecture
 
-The project supports both local and hosted inference.
-
-### Local mode
+### Local Mode
 
 ```text
 User
  ↓
-Python Application
+Gradio / Python App
  ↓
 OpenAI Python Client
  ↓
-localhost:11434
+http://localhost:11434/v1
  ↓
 Ollama
  ↓
 Qwen2.5-Coder 0.5B
  ↓
-Explanation
+Code Explanation
 ```
 
-### Hosted mode
+### Hosted Mode
 
 ```text
 User
  ↓
-Python Application
+Gradio / Python App
  ↓
 OpenAI Python Client
  ↓
@@ -62,56 +72,35 @@ OpenRouter API
  ↓
 Hosted Model
  ↓
-Explanation
+Code Explanation
 ```
 
-The same application can switch between the two modes using a single configuration flag.
+The application uses the same Python-side interface in both modes. The backend is selected through `config.py`.
 
 ---
 
-## Project Structure
+## Local vs Hosted
 
-```text
-on-device-code-explainer/
-│
-├── app.py
-├── config.py
-├── benchmark.py
-├── benchmark.md
-├── README.md
-├── .env
-└── .gitignore
-```
+| Mode   | Backend    | Model Location  | Internet Required   |
+| ------ | ---------- | --------------- | ------------------- |
+| Local  | Ollama     | My laptop       | No during inference |
+| Hosted | OpenRouter | Remote provider | Yes                 |
 
-### `app.py`
-
-Main application.
-
-It:
-
-* accepts Python code from the user,
-* sends the code to the selected model,
-* and prints the generated explanation.
-
-### `config.py`
-
-Contains the model and connection configuration.
-
-The main switch is:
+The main configuration switch is:
 
 ```python
 USE_LOCAL = True
 ```
 
-Set it to:
+Use:
 
 ```python
 USE_LOCAL = True
 ```
 
-to use Ollama locally.
+to run the application locally with Ollama.
 
-Set it to:
+Use:
 
 ```python
 USE_LOCAL = False
@@ -119,28 +108,9 @@ USE_LOCAL = False
 
 to use the hosted OpenRouter backend.
 
-### `benchmark.py`
-
-Runs a small benchmark on the local model and measures response time and generation speed.
-
-### `benchmark.md`
-
-Contains the benchmark results, observations, model information, and limitations.
-
 ---
 
-## Technologies Used
-
-* Python
-* Ollama
-* Qwen2.5-Coder 0.5B
-* OpenAI Python client
-* OpenRouter
-* python-dotenv
-
----
-
-## Local Model
+## Model
 
 ### Qwen2.5-Coder 0.5B
 
@@ -152,7 +122,54 @@ Runtime: Ollama
 Inference: Local / On-device
 ```
 
-The model was selected because it is small enough for local experimentation on a laptop while being designed for coding-related tasks.
+The model was selected because it is small enough for local experimentation and is designed for coding-related tasks.
+
+The project intentionally stays with the 0.5B model rather than downloading a larger model, because the main objective is to explore the local-LLM workflow on the available laptop hardware.
+
+---
+
+## Project Structure
+
+```text
+on-device-code-explainer/
+│
+├── app.py
+├── gradio_app.py
+├── config.py
+├── benchmark.py
+├── benchmark.md
+├── README.md
+├── requirements.txt
+├── .gitignore
+└── .env
+```
+
+### `app.py`
+
+Contains the main code-explanation logic and handles the selected local or hosted backend.
+
+### `gradio_app.py`
+
+Provides a simple browser-based interface for entering Python code and viewing the generated explanation.
+
+### `config.py`
+
+Stores the local and hosted configuration, including:
+
+* local model
+* local endpoint
+* hosted model
+* hosted API endpoint
+* API key
+* `USE_LOCAL` switch
+
+### `benchmark.py`
+
+Runs a small local benchmark using several code examples and records response time and generation speed.
+
+### `benchmark.md`
+
+Contains the benchmark results, observations, and limitations.
 
 ---
 
@@ -160,19 +177,19 @@ The model was selected because it is small enough for local experimentation on a
 
 ### 1. Install Ollama
 
-Install Ollama and verify that it is available from the terminal:
+Verify that Ollama is installed:
 
 ```powershell
 ollama --version
 ```
 
-### 2. Pull the model
+### 2. Pull the local model
 
 ```powershell
 ollama pull qwen2.5-coder:0.5b
 ```
 
-Verify that it is installed:
+Verify the model:
 
 ```powershell
 ollama list
@@ -181,53 +198,33 @@ ollama list
 ### 3. Install Python dependencies
 
 ```powershell
-pip install openai python-dotenv
+pip install -r requirements.txt
 ```
 
 ---
 
 ## Environment Variables
 
-Create a `.env` file:
+Create a `.env` file in the project directory:
 
 ```text
 OPENROUTER_API_KEY=your_api_key_here
 MODEL_NAME=openrouter/free
 ```
 
-The API key should not be committed to GitHub.
+The `.env` file contains secrets and should **not** be committed to GitHub.
 
 ---
 
-## Running the Application
+## Run the CLI Application
 
-### Local mode
-
-In `config.py`:
+Set:
 
 ```python
 USE_LOCAL = True
 ```
 
-Then run:
-
-```powershell
-python app.py
-```
-
-The application will use:
-
-```text
-localhost:11434 → Ollama → Qwen2.5-Coder 0.5B
-```
-
-### Hosted mode
-
-In `config.py`:
-
-```python
-USE_LOCAL = False
-```
+in `config.py`.
 
 Then run:
 
@@ -235,36 +232,25 @@ Then run:
 python app.py
 ```
 
-The application will use the OpenRouter hosted backend.
+The application accepts Python code from the terminal and uses the selected model to generate an explanation.
 
 ---
 
-## Example
+## Run the Gradio Interface
 
-After starting the application:
+For the browser-based interface:
 
-```text
-============================================================
-       ON-DEVICE CODE EXPLAINER
-============================================================
-
-Mode: LOCAL
-Model: qwen2.5-coder:0.5b
+```powershell
+python gradio_app.py
 ```
 
-Paste Python code and finish with:
-
-```text
-END
-```
-
-The model then returns an explanation of the code.
+Gradio will provide a local URL that can be opened in a browser.
 
 ---
 
 ## Benchmark
 
-A small benchmark was performed using five test cases:
+A local benchmark was performed using five simple test cases:
 
 1. Basic function
 2. Loop
@@ -272,7 +258,7 @@ A small benchmark was performed using five test cases:
 4. Buggy code
 5. Counting vowels
 
-### Local benchmark result
+### Result
 
 ```text
 Model: Qwen2.5-Coder 0.5B
@@ -280,68 +266,60 @@ Runtime: Ollama
 Average generation speed: 28.29 tokens/sec
 ```
 
-The detailed benchmark and observations are available in [`benchmark.md`](benchmark.md).
+The detailed results are available in [`benchmark.md`](benchmark.md).
 
 ---
 
-## Quality and Limitations
+## Quality Observation
 
-The quality evaluation in this project is intentionally limited.
+The model was able to produce meaningful explanations for several basic programming concepts.
 
-The primary objective was to **test and understand local LLM inference**, not to prove that the selected 0.5B model provides production-ready code explanations.
+However, the test outputs also showed limitations. In some cases, the model introduced assumptions that were not present in the input code. It also failed to correctly identify an indexing error in one of the test cases.
 
-During testing, the model was able to explain several basic programming concepts, but some outputs contained unsupported assumptions or incorrect interpretations.
+For this reason, the response-quality results should not be interpreted as a production-quality evaluation.
 
-For example, the model sometimes described example function calls that were not present in the input code and failed to correctly identify an indexing error in one of the test cases.
-
-These observations are treated as model limitations rather than a failure of the local-inference setup.
-
-A larger or more capable model could be evaluated in a future version if higher explanation quality becomes a requirement.
+The main goal of this experiment was to verify and understand **local inference**, not to optimize the quality of the generated explanations.
 
 ---
 
-## What This Project Demonstrates
+## What I Learned
 
-This project demonstrates several Week 4 concepts:
+Through this project, I practiced:
 
-### Local inference
-
-An open-source model can run directly on the user's machine through Ollama.
-
-### OpenAI-compatible APIs
-
-The same OpenAI Python client can communicate with different backends by changing the API endpoint.
-
-### Local vs Hosted
-
-The application can switch between:
-
-```text
-Local Ollama
-```
-
-and:
-
-```text
-Hosted OpenRouter
-```
-
-through a configuration flag.
-
-### Model and hardware trade-offs
-
-A small quantized model can be practical for local experimentation because it requires significantly fewer resources than larger models.
-
-### Benchmarking
-
-The project measures local generation speed and documents the observed limitations of the selected model.
+* Running an open-source LLM locally with Ollama
+* Calling a local model through an OpenAI-compatible API
+* Understanding the role of `base_url` when switching between hosted and local inference
+* Separating configuration from application logic
+* Switching between local and hosted backends with a configuration flag
+* Measuring local model generation speed
+* Evaluating practical limitations of a small local model
+* Building a simple Gradio interface around an LLM application
 
 ---
 
 ## Key Takeaway
 
-The main result of this project is not that the 0.5B model is the best code-explanation model.
+The main outcome of this project was understanding that an LLM application does not have to depend entirely on a remote API.
 
-The main result is demonstrating that an AI application can be designed to run **locally and privately**, while keeping the option to switch to a hosted backend when needed.
+A small open-source model can run directly on a laptop, and an existing Python application can communicate with it through a local OpenAI-compatible endpoint.
 
-This is the core idea behind the Week 4 **Offline-First AI Tool** project.
+The project also demonstrates the trade-off between **local accessibility and model capability**: local inference provides control and offline operation, while a small model may have noticeable limitations in response quality.
+
+---
+
+## Future Improvements
+
+Possible future improvements include:
+
+* Testing a larger coding model
+* Improving the prompt to reduce unsupported assumptions
+* Adding more detailed code-error detection
+* Adding additional benchmark cases
+* Comparing local and hosted models using the same fixed model
+* Adding a more polished Gradio interface
+
+---
+
+## Week 4 Project
+
+This project corresponds to the Week 4 **Offline-First AI Tool** idea from the roadmap: a small application that runs using a local model via Ollama with an optional hosted backend, together with a benchmark and model-choice discussion.
